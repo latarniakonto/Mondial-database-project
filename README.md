@@ -1,16 +1,16 @@
 Simple flight tracking system
 
-Technologies used:
+### Technologies used:
 	-Mondial database
 	-PostGIS library
 	-PostgreSQL
 	
-Main functionalities:
+### Main functionalities:
 	-flight(id, airport) adds new flight to database
 	-list_flights(id) lists all intersecting flights in database
 	-list_cities(id, dist) lists cities lying closer than "dist" to any flight in database 
 	
-How to run it?
+### How to run it?
 
 In the PostgreSQL database there has to be city and airport table(tables from Mondial database).
 In addition to that there has to be user named "app" with permission to access database "student"
