@@ -1,0 +1,183 @@
+CREATE TABLE flight(
+    id INT PRIMARY KEY,
+    start_from CHARACTER VARYING(3),
+    end_in CHARACTER VARYING(3),
+    takeoff_time TIMESTAMP WITH TIME ZONE,
+    landing_time TIMESTAMP WITH TIME ZONE
+);
+CREATE TABLE flight_segment(
+    id SERIAL PRIMARY KEY,
+    fid INT, 
+    iatacode CHARACTER VARYING(3),    
+    takeoff_time TIMESTAMP WITH TIME ZONE,
+    landing_time TIMESTAMP WITH TIME ZONE,
+    FOREIGN KEY (fid) REFERENCES flight(id)
+);
+CREATE TABLE ans_table(
+    rid INT,
+    start_from CHARACTER VARYING(3),
+    end_in CHARACTER VARYING(3),
+    takeoff_time TIMESTAMP WITH TIME ZONE
+);
+CREATE TABLE ans_table1(
+    name CHARACTER VARYING(50),
+    province CHARACTER VARYING(50),
+    country CHARACTER VARYING(4)
+);
+CREATE OR REPLACE FUNCTION airports_geocords(iata1 airport.iatacode%TYPE, 
+                                                iata2 airport.iatacode%TYPE)
+     RETURNS TABLE(long1 airport.longitude%TYPE, lat1 airport.latitude%TYPE,
+                    long2 airport.longitude%TYPE, lat2 airport.latitude%TYPE)
+AS $X$
+    SELECT a1.longitude, a1.latitude, a2.longitude, a2.latitude
+    FROM airport a1, airport a2    
+    WHERE a1.iatacode=iata1 AND a2.iatacode=iata2;
+$X$ LANGUAGE SQL STABLE;
+
+CREATE OR REPLACE FUNCTION get_distance(iata1 airport.iatacode%TYPE, 
+                                                iata2 airport.iatacode%TYPE,
+                                                    iata3 airport.iatacode%TYPE, 
+                                                        iata4 airport.iatacode%TYPE)
+    RETURNS DOUBLE PRECISION
+AS $X$
+DECLARE
+    long1 airport.longitude%TYPE;
+    long2 airport.longitude%TYPE;
+    long3 airport.longitude%TYPE;
+    long4 airport.longitude%TYPE;
+    lat1 airport.latitude%TYPE;
+    lat2 airport.latitude%TYPE;
+    lat3 airport.latitude%TYPE;
+    lat4 airport.latitude%TYPE;
+    ans DOUBLE PRECISION;
+
+BEGIN
+    SELECT ag1.long1, ag1.lat1, ag1.long2, ag1.lat2 
+    INTO long1, lat1, long2, lat2 
+    FROM airports_geocords(iata1, iata2) ag1;
+
+    SELECT ag1.long1, ag1.lat1, ag1.long2, ag1.lat2 
+    INTO long3, lat3, long4, lat4 
+    FROM airports_geocords(iata3, iata4) ag1;
+
+    SELECT ST_Distance(TEXT('LINESTRING('||long1||' '||lat1||', '||long2||' '||lat2||')')::geography, 
+                    TEXT('LINESTRING('||long3||' '||lat3||', '||long4||' '||lat4||')')::geography)/1000 INTO ans as distance;
+    RETURN ans;
+
+END
+$X$ LANGUAGE PLpgSQL;
+
+
+
+CREATE OR REPLACE FUNCTION get_overlapping_segments(id INT) 
+    RETURNS INT
+AS $X$
+DECLARE
+    segment_id1 INT;
+    segment_id2 INT;
+    code1 airport.iatacode%TYPE;
+    code2 airport.iatacode%TYPE;
+    fid1 INT;
+    last_fid INT;
+    start1 airport.iatacode%TYPE;
+    start2 airport.iatacode%TYPE;
+    length INT;
+    starting_time_it TIMESTAMP WITH TIME ZONE;
+    starting_time TIMESTAMP WITH TIME ZONE;
+    i INT;
+    j INT;	
+BEGIN             
+    i := -1;
+    FOR segment_id1, code1 IN(
+        SELECT fs1.id, fs1.iatacode FROM flight f1 
+        JOIN flight_segment fs1 ON(f1.id=fs1.fid)
+        WHERE f1.id=$1
+        ORDER BY 1
+    )
+    LOOP          
+        IF i=-1 THEN
+            start1 := code1;
+            i := 0;
+            CONTINUE;
+        END IF;         
+       
+        j := -1;          
+        FOR segment_id2, code2, fid1, starting_time_it IN(
+            SELECT fs1.id, fs1.iatacode, fs1.fid, fs1.takeoff_time FROM flight_segment fs1
+            ORDER BY 1 
+        )
+        LOOP      
+            IF fid1=$1 THEN                               
+                CONTINUE;
+            END IF;
+            IF j=-1 THEN
+                start2 := code2;
+                starting_time := starting_time_it;
+                last_fid := fid1;
+                j := 0;
+                CONTINUE;
+            END IF;
+            IF fid1<>last_fid THEN            
+                last_fid := fid1;
+                starting_time := starting_time_it;
+                start2 := code2;
+                CONTINUE;
+            END IF;       
+
+            SELECT ROUND(get_distance(start1, code1, start2, code2)) INTO length;      
+            
+            IF length=0 THEN
+                INSERT INTO ans_table(rid, start_from, end_in, takeoff_time)
+                SELECT fid1, start2, code2, starting_time;
+            END IF;
+            start2 := code2;
+            starting_time := starting_time_it;
+        END LOOP;        
+        start1 := code1;
+    END LOOP;	
+    RETURN 1;
+END
+$X$ LANGUAGE PLpgSQL;
+
+CREATE OR REPLACE FUNCTION get_cities(INT, INT) 
+    RETURNS INT
+AS $X$
+DECLARE
+    segment_id1 INT;    
+    start1 airport.iatacode%TYPE;
+    code1 airport.iatacode%TYPE;
+    i INT;
+    long1 airport.longitude%TYPE;
+    long2 airport.longitude%TYPE;    
+    lat1 airport.latitude%TYPE;
+    lat2 airport.latitude%TYPE;    
+   
+BEGIN             
+    i := -1;
+    FOR segment_id1, code1 IN(
+        SELECT fs1.id, fs1.iatacode FROM flight f1 
+        JOIN flight_segment fs1 ON(f1.id=fs1.fid)
+        WHERE f1.id=$1
+        ORDER BY 1
+    )
+    LOOP          
+        IF i=-1 THEN
+            start1 := code1;
+            i := 0;
+            CONTINUE;
+        END IF;    
+        
+        SELECT ag1.long1, ag1.lat1, ag1.long2, ag1.lat2 
+        INTO long1, lat1, long2, lat2 
+        FROM airports_geocords(code1, start1) ag1;
+        
+        INSERT INTO ans_table1(name, province, country)
+        SELECT c1.name, c1.province, c1.country FROM city c1
+        WHERE ROUND(ST_Distance(TEXT('LINESTRING('||long1||' '||lat1||', '||long2||' '||lat2||')')::geography, 
+                                TEXT('POINT('||c1.longitude||' '||c1.latitude||')')::geography)/1000) < $2;
+
+        start1 := code1;
+    END LOOP;	
+   RETURN 1;
+END
+$X$ LANGUAGE PLpgSQL;

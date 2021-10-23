@@ -1,0 +1,53 @@
+DEFAULT 
+{"function":"flight", "params":{"id":"12345", "airports":[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},{"airport":"WRO","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, {"airport":"GDN", "landing_time":"2021-06-01 22:46:44.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12345"}}
+{"function":"flight", "params":{"id":"12346", "airports":[{"airport":"KTW","takeoff_time":"2021-06-02 12:00:00.229109+02"},{"airport":"POZ", "landing_time":"2021-06-01 13:00:00.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12346"}}
+To co w specyfikacji
+
+TC1
+{"function":"flight", "params":{"id":"12346", "airports":[{"airport":"KTW","takeoff_time":"2021-06-02 12:00:00.229109+02"},{"airport":"POZ", "landing_time":"2021-06-01 13:00:00.229109+02"}]}}
+{"function":"flight", "params":{"id":"12345", "airports":[{"airport":"WAW","takeoff_time":"2021-06-02 12:00:00.229109+02"},{"airport":"WRO", "landing_time":"2021-06-01 13:00:00.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12346"}}
+{"function":"list_flights", "params":{"id":"12345"}}
+1 trasa KTW-POZ/WAW-WRO
+
+TC2
+{"function":"flight", "params":{"id":"12345", "airports":
+[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},
+{"airport":"GDN","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, 
+{"airport":"SZZ","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"},
+{"airport":"WRO","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"},
+{"airport":"RZE","landing_time":"2021-06-01 20:26:44.229109+02"}]}}
+{"function":"flight", "params":{"id":"12346", "airports":[{"airport":"LCJ","takeoff_time":"2021-06-02 12:00:00.229109+02"},{"airport":"POZ", "landing_time":"2021-06-01 13:00:00.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12346"}}
+{"functi tras
+
+TC3
+{"function":"flight", "params":{"id":"12345", "airports":
+[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},
+{"airport":"KTW","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, 
+{"airport":"WRO","landing_time":"2021-06-01 20:26:44.229109+02"}]}}
+{"function":"flight", "params":{"id":"12346", "airports":
+[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},
+{"airport":"KRK","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, 
+{"airport":"RZE","landing_time":"2021-06-01 20:26:44.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12346"}}
+{"function":"list_flights", "params":{"id":"12345"}}
+1 trasa WAW-KRK/ WAW-KTW
+
+TC4
+{"function":"flight", "params":{"id":"12345", "airports":
+[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},
+{"airport":"KTW","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, 
+{"airport":"WRO","landing_time":"2021-06-01 20:26:44.229109+02"}]}}
+{"function":"flight", "params":{"id":"12346", "airports":
+[{"airport":"WAW","takeoff_time":"2021-06-01 20:26:44.229109+02"},
+{"airport":"KRK","takeoff_time":"2021-06-01 21:46:44.229109+02", "landing_time":"2021-06-01 21:26:44.229109+02"}, 
+{"airport":"RZE","landing_time":"2021-06-01 20:26:44.229109+02"}]}}
+{"function":"flight", "params":{"id":"12347", "airports":[{"airport":"RZE","takeoff_time":"2021-06-02 12:00:00.229109+02"},{"airport":"SZZ", "landing_time":"2021-06-01 13:00:00.229109+02"}]}}
+{"function":"list_flights", "params":{"id":"12346"}}
+{"function":"list_flights", "params":{"id":"12345"}}
+{"function":"list_flights", "params":{"id":"12347"}}
+2 trasa WAW-KRK/ WAW-KTW i RZE-SZZ 
+3 trasy KRK-RZE, WAW-KRK, WAW-KAT
